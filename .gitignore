@@ -1,0 +1,17 @@
+# Python temporary files
+__pycache__/
+*.pyc
+
+# Environment files
+venv/
+.venv/
+env/
+
+# PyInstaller outputs
+build/
+dist/
+*.spec
+
+# Configuration built inside AppData, but in case of local testing:
+widget_config.json
+world_clock_widget.py
