@@ -34,7 +34,7 @@
 
 برای کاربران عادی که نیاز به پایتون ندارند، فایل نصبی آماده را از بخش [**Releases**](https://github.com/mrsaeedi/Window-Screen-Date-Time-Widget/releases) دریافت کنید.
 
-1. آخرین نسخه با پسوند `.exe` را دانلود کنید.
+1. آخرین نسخه با پسوند `.exe` یا نصب‌کننده را دانلود کنید.
 2. فایل را اجرا کرده و مراحل نصب را دنبال کنید.
 3. برنامه از منوی Start یا با اجرای خودکار در استارتاپ در دسترس خواهد بود.
 
@@ -51,28 +51,35 @@
 ### 📥 ۱. کلون کردن مخزن
 
 ```bash
-git clone https://github.com/mrsaeedi/Window-Screen-Date-Time-Widget.git
+git clone [https://github.com/mrsaeedi/Window-Screen-Date-Time-Widget.git](https://github.com/mrsaeedi/Window-Screen-Date-Time-Widget.git)
 cd Window-Screen-Date-Time-Widget
-🐍 ۲. ساخت محیط مجازی (venv)
-bash
+```
+### 🐍 ۲. ساخت محیط مجازی (venv)
+
 # ساخت محیط مجازی
+```Bash
 python -m venv venv
-
+```
 # فعال‌سازی (CMD)
+```
 venv\Scripts\activate
-
+```
 # یا فعال‌سازی (PowerShell)
+```
 .\venv\Scripts\Activate.ps1
-📦 ۳. نصب وابستگی‌ها
-bash
+```
+### 📦 ۳. نصب وابستگی‌ها
+```Bash
 pip install -r requirements.txt
-🚀 ۴. اجرای برنامه در حالت توسعه
-bash
+```
+### 🚀 ۴. اجرای برنامه در حالت توسعه
+```Bash
 python time_screen_widget.pyw
+```
 تمامی تغییرات به صورت زنده در پنجره قابل مشاهده خواهند بود.
 
-📁 ساختار پروژه
-text
+## 📁 ساختار پروژه
+```Plaintext
 Window-Screen-Date-Time-Widget/
 ├── assets/
 │   ├── icon.ico                # آیکون برنامه
@@ -82,7 +89,8 @@ Window-Screen-Date-Time-Widget/
 ├── requirements.txt            # کتابخانه‌های مورد نیاز
 ├── LICENSE                     # مجوز پروژه
 └── README.md                   # همین فایل
-🎨 نکات توسعه
-استایل‌دهی (UI): ظاهر برنامه با setStyleSheet و فناوری QSS طراحی شده. برای تغییر رنگ یا پدینگ، بخش‌های مربوطه را در time_screen_widget.pyw ویرایش کنید.
+```
+## 🎨 نکات توسعه
+ استایل‌دهی (UI): ظاهر برنامه با `setStyleSheet` و فناوری `QSS` طراحی شده. برای تغییر رنگ یا پدینگ، بخش‌های مربوطه را در `time_screen_widget.pyw` ویرایش کنید.
 
-تنظیمات برنامه: تنظیمات در فایل JSON درون مسیر AppData\Roaming\WindowScreenWidget ذخیره می‌شود و با به‌روزرسانی برنامه از دست نمی‌رود.
+تنظیمات برنامه: تنظیمات در فایل `JSON` درون مسیر `AppData\Roaming\WindowScreenWidget` ذخیره می‌شود و با به‌روزرسانی برنامه از دست نمی‌رود.
