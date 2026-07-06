@@ -2,33 +2,88 @@ import sys
 import os
 import json
 from datetime import datetime
+import calendar
 import pytz
 import jdatetime
 
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QMenu, QDialog, QCheckBox, QRadioButton, 
                              QButtonGroup, QComboBox, QSlider, QPushButton, QGroupBox,
-                             QScrollArea)
+                             QScrollArea, QGridLayout)
 from PyQt6.QtCore import Qt, QTimer, QPoint
 from PyQt6.QtGui import QFont, QAction, QIcon
 
 # دیتابیس شهرها
-CITIES_DB = {
+MONTHS_EN_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+# تعطیلات رسمی ثابت تقویم شمسی (بر پایه تاریخ خورشیدی - سالانه ثابت)
+# تعطیلات وابسته به تقویم قمری (مانند عید فطر، عید قربان، تاسوعا و عاشورا)
+# چون هر سال جابجا می‌شوند و نیاز به جدول تبدیل دقیق قمری دارند، در این نسخه پوشش داده نشده‌اند.
+HOLIDAYS_JALALI = {
+    (1, 1): 'نوروز', (1, 2): 'نوروز', (1, 3): 'نوروز', (1, 4): 'نوروز',
+    (1, 12): 'روز جمهوری اسلامی', (1, 13): 'روز طبیعت',
+    (3, 14): 'رحلت امام خمینی', (3, 15): 'قیام ۱۵ خرداد',
+    (11, 22): 'پیروزی انقلاب اسلامی',
+    (12, 29): 'ملی شدن صنعت نفت',
+}
+
+CITIES_DB = {  
     'TEH': {'fa': 'تهران', 'en': 'Tehran', 'tz': 'Asia/Tehran'},
-    'NYC': {'fa': 'نیویورک', 'en': 'New York', 'tz': 'America/New_York'},
-    'TOR': {'fa': 'تورنتو', 'en': 'Toronto', 'tz': 'America/Toronto'},
-    'BER': {'fa': 'برلین', 'en': 'Berlin', 'tz': 'Europe/Berlin'},
-    'PAR': {'fa': 'پاریس', 'en': 'Paris', 'tz': 'Europe/Paris'},
-    'SYD': {'fa': 'سیدنی', 'en': 'Sydney', 'tz': 'Australia/Sydney'},
-    'IST': {'fa': 'استانبول', 'en': 'Istanbul', 'tz': 'Europe/Istanbul'},
+    'AKL': {'fa': 'اوکلند', 'en': 'Auckland', 'tz': 'Pacific/Auckland'},
+    'ATH': {'fa': 'آتن', 'en': 'Athens', 'tz': 'Europe/Athens'},
     'BAG': {'fa': 'بغداد', 'en': 'Baghdad', 'tz': 'Asia/Baghdad'},
     'BAK': {'fa': 'باکو', 'en': 'Baku', 'tz': 'Asia/Baku'},
-    'ERE': {'fa': 'ایروان', 'en': 'Yerevan', 'tz': 'Asia/Yerevan'},
-    'DXB': {'fa': 'دبی', 'en': 'Dubai', 'tz': 'Asia/Dubai'},
-    'MSC': {'fa': 'مسکو', 'en': 'Moscow', 'tz': 'Europe/Moscow'},
+    'BER': {'fa': 'برلین', 'en': 'Berlin', 'tz': 'Europe/Berlin'},
+    'BKK': {'fa': 'بانکوک', 'en': 'Bangkok', 'tz': 'Asia/Bangkok'},
+    'BOM': {'fa': 'بمبئی', 'en': 'Mumbai', 'tz': 'Asia/Kolkata'},
+    'BRU': {'fa': 'بروکسل', 'en': 'Brussels', 'tz': 'Europe/Brussels'},
+    'BUE': {'fa': 'بوئنوس آیرس', 'en': 'Buenos Aires', 'tz': 'America/Argentina/Buenos_Aires'},
+    'CAI': {'fa': 'قاهره', 'en': 'Cairo', 'tz': 'Africa/Cairo'},
+    'CHI': {'fa': 'شیکاگو', 'en': 'Chicago', 'tz': 'America/Chicago'},
+    'KBL': {'fa': 'کابل', 'en': 'Kabul', 'tz': 'Asia/Kabul'},
+    'CMN': {'fa': 'کازابلانکا', 'en': 'Casablanca', 'tz': 'Africa/Casablanca'},
+    'CPH': {'fa': 'کپنهاگ', 'en': 'Copenhagen', 'tz': 'Europe/Copenhagen'},
     'DOH': {'fa': 'دوحه', 'en': 'Doha', 'tz': 'Asia/Qatar'},
+    'DXB': {'fa': 'دبی', 'en': 'Dubai', 'tz': 'Asia/Dubai'},
+    'ERE': {'fa': 'ایروان', 'en': 'Yerevan', 'tz': 'Asia/Yerevan'},
+    'HEL': {'fa': 'هلسینکی', 'en': 'Helsinki', 'tz': 'Europe/Helsinki'},
+    'HKG': {'fa': 'هنگ کنگ', 'en': 'Hong Kong', 'tz': 'Asia/Hong_Kong'},
+    'IST': {'fa': 'استانبول', 'en': 'Istanbul', 'tz': 'Europe/Istanbul'},
+    'JKT': {'fa': 'جاکارتا', 'en': 'Jakarta', 'tz': 'Asia/Jakarta'},
+    'JNB': {'fa': 'ژوهانسبورگ', 'en': 'Johannesburg', 'tz': 'Africa/Johannesburg'},
+    'KWI': {'fa': 'کویت', 'en': 'Kuwait', 'tz': 'Asia/Kuwait'},
+    'LAX': {'fa': 'لس آنجلس', 'en': 'Los Angeles', 'tz': 'America/Los_Angeles'},
+    'LIM': {'fa': 'لیما', 'en': 'Lima', 'tz': 'America/Lima'},
+    'LON': {'fa': 'لندن', 'en': 'London', 'tz': 'Europe/London'},
+    'LOS': {'fa': 'لاگوس', 'en': 'Lagos', 'tz': 'Africa/Lagos'},
+    'MAD': {'fa': 'مادرید', 'en': 'Madrid', 'tz': 'Europe/Madrid'},
     'MCT': {'fa': 'مسقط', 'en': 'Muscat', 'tz': 'Asia/Muscat'},
-    'KWI': {'fa': 'کویت', 'en': 'Kuwait', 'tz': 'Asia/Kuwait'}
+    'MEL': {'fa': 'ملبورن', 'en': 'Melbourne', 'tz': 'Australia/Melbourne'},
+    'MEX': {'fa': 'مکزیکو سیتی', 'en': 'Mexico City', 'tz': 'America/Mexico_City'},
+    'MNL': {'fa': 'مانیل', 'en': 'Manila', 'tz': 'Asia/Manila'},
+    'MSC': {'fa': 'مسکو', 'en': 'Moscow', 'tz': 'Europe/Moscow'},
+    'NBO': {'fa': 'نایروبی', 'en': 'Nairobi', 'tz': 'Africa/Nairobi'},
+    'NYC': {'fa': 'نیویورک', 'en': 'New York', 'tz': 'America/New_York'},
+    'OSL': {'fa': 'اسلو', 'en': 'Oslo', 'tz': 'Europe/Oslo'},
+    'PAR': {'fa': 'پاریس', 'en': 'Paris', 'tz': 'Europe/Paris'},
+    'ROM': {'fa': 'رم', 'en': 'Rome', 'tz': 'Europe/Rome'},
+    'SAO': {'fa': 'سائوپائولو', 'en': 'São Paulo', 'tz': 'America/Sao_Paulo'},
+    'SCL': {'fa': 'سانتیاگو', 'en': 'Santiago', 'tz': 'America/Santiago'},
+    'SEL': {'fa': 'سئول', 'en': 'Seoul', 'tz': 'Asia/Seoul'},
+    'SHA': {'fa': 'شانگهای', 'en': 'Shanghai', 'tz': 'Asia/Shanghai'},
+    'SIN': {'fa': 'سنگاپور', 'en': 'Singapore', 'tz': 'Asia/Singapore'},
+    'STO': {'fa': 'استکهلم', 'en': 'Stockholm', 'tz': 'Europe/Stockholm'},
+    'SYD': {'fa': 'سیدنی', 'en': 'Sydney', 'tz': 'Australia/Sydney'},
+    'TOR': {'fa': 'تورنتو', 'en': 'Toronto', 'tz': 'America/Toronto'},
+    'TYO': {'fa': 'توکیو', 'en': 'Tokyo', 'tz': 'Asia/Tokyo'},
+    'VIE': {'fa': 'وین', 'en': 'Vienna', 'tz': 'Europe/Vienna'},
+    'ISB': {'fa': 'اسلام‌آباد', 'en': 'Islamabad', 'tz': 'Asia/Karachi'},
+    'ASB': {'fa': 'عشق‌آباد', 'en': 'Ashgabat', 'tz': 'Asia/Ashgabat'},         
+    'RUH': {'fa': 'ریاض', 'en': 'Riyadh', 'tz': 'Asia/Riyadh'},                
+    'BAH': {'fa': 'منامه', 'en': 'Manama', 'tz': 'Asia/Bahrain'},               
+    'DYU': {'fa': 'دوشنبه', 'en': 'Dushanbe', 'tz': 'Asia/Dushanbe'},          
+    'WAW': {'fa': 'ورشو', 'en': 'Warsaw', 'tz': 'Europe/Warsaw'},
 }
 
 TRANSLATIONS = {
@@ -42,7 +97,15 @@ TRANSLATIONS = {
         'only_time': 'فقط زمان (پنهان کردن نام شهر در حالت تک‌شهری)',
         'run_at_startup': 'اجرا همزمان با روشن شدن سیستم (Startup)',
         'timer': 'زمان‌سنج',
-        'months_fa': ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند']
+        'calendar': 'تقویم',
+        'back_to_clock': 'بازگشت به زمان',
+        'cal_type': 'نوع تقویم پیش‌فرض',
+        'shamsi': 'شمسی',
+        'miladi': 'میلادی',
+        'months_fa': ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+        'months_en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        'week_days_fa': ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'],
+        'week_days_en': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
     },
     'en': {
         'title_text': 'Time',
@@ -53,11 +116,19 @@ TRANSLATIONS = {
         'show_title': 'Show Widget Title ("Time")', 'show_date': 'Show Date below Time',
         'only_time': 'Only Time (Hide city name in single mode)',
         'run_at_startup': 'Run at Windows Startup',
-        'timer': 'Timer'
+        'timer': 'Timer',
+        'calendar': 'Calendar',
+        'back_to_clock': 'Back to Clock',
+        'cal_type': 'Default Calendar',
+        'shamsi': 'Persian (Jalali)',
+        'miladi': 'Gregorian',
+        'months_fa': ['Farvardin', 'Ordibehesht', 'Khordad', 'Tir', 'Mordad', 'Shahrivar', 'Mehr', 'Aban', 'Azar', 'Dey', 'Bahman', 'Esfand'],
+        'months_en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        'week_days_fa': ['Sa', 'Su', 'Mo', 'Tu', 'We', 'Th', 'Fr'],
+        'week_days_en': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
     }
 }
 
-# دسترسی به مسیر فایل‌ها در حالت کامپایل شده PyInstaller
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -65,11 +136,9 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# تنظیم مسیر ذخیره‌سازی استاندارد در AppData ویندوز برای جلوگیری از آلودگی محیط دسکتاپ
 app_data_dir = os.path.join(os.getenv('APPDATA', os.path.expanduser('~')), 'TimeWidget')
 os.makedirs(app_data_dir, exist_ok=True)
 CONFIG_FILE = os.path.join(app_data_dir, 'widget_config.json')
-
 
 def en_to_fa_num(number_str):
     translation_table = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
@@ -159,6 +228,23 @@ class SettingsDialog(QDialog):
         format_layout.addWidget(self.rad_24)
         format_group.setLayout(format_layout)
         layout.addWidget(format_group)
+
+        # انتخاب نوع تقویم
+        cal_group = QGroupBox(t['cal_type'])
+        cal_layout = QHBoxLayout()
+        self.btn_group_cal = QButtonGroup(self)
+        self.rad_shamsi = QRadioButton(t['shamsi'])
+        self.rad_miladi = QRadioButton(t['miladi'])
+        self.btn_group_cal.addButton(self.rad_shamsi)
+        self.btn_group_cal.addButton(self.rad_miladi)
+        if self.parent.config.get('calendar_type', 'jalali') == 'jalali':
+            self.rad_shamsi.setChecked(True)
+        else:
+            self.rad_miladi.setChecked(True)
+        cal_layout.addWidget(self.rad_shamsi)
+        cal_layout.addWidget(self.rad_miladi)
+        cal_group.setLayout(cal_layout)
+        layout.addWidget(cal_group)
         
         lang_layout = QHBoxLayout()
         lang_layout.addWidget(QLabel(t['lang']))
@@ -231,6 +317,14 @@ class SettingsDialog(QDialog):
         self.parent.config['show_date'] = self.chk_date.isChecked()
         self.parent.config['only_time'] = self.chk_only_time.isChecked()
         self.parent.config['time_format'] = 12 if self.rad_12.isChecked() else 24
+        old_calendar_type = self.parent.config.get('calendar_type', 'jalali')
+        new_calendar_type = 'jalali' if self.rad_shamsi.isChecked() else 'gregorian'
+        self.parent.config['calendar_type'] = new_calendar_type
+        if new_calendar_type != old_calendar_type:
+            # نوع تقویم عوض شده؛ سال و ماه ذخیره‌شده مربوط به تقویم قبلی معتبر نیست
+            # پاک می‌کنیم تا رندر بعدی، ماه جاری را بر اساس تقویم جدید محاسبه کند
+            self.parent.current_cal_year = None
+            self.parent.current_cal_month = None
         self.parent.config['lang'] = self.cmb_lang.currentData()
         self.parent.config['font_size'] = self.sld_font.value()
         self.parent.config['opacity'] = self.sld_opacity.value() / 100.0
@@ -247,6 +341,10 @@ class ClockWidget(QWidget):
         self.stopwatch_time = 0
         self.stopwatch_running = False
         
+        # متغیرهای مربوط به پیمایش ماه در تقویم
+        self.current_cal_year = None
+        self.current_cal_month = None
+        
         self.load_default_config()
         self.init_ui()
         
@@ -256,14 +354,16 @@ class ClockWidget(QWidget):
             'run_at_startup': True,
             'show_seconds': True,
             'time_format': 24,
-            'lang': 'fa',
+            'calendar_type': 'jalali',
+            'lang': 'en',
             'font_size': 16,
             'opacity': 0.85,
             'selected_cities': ['TEH'],
             'show_title': False,
             'show_date': True,
             'only_time': True,
-            'show_timer_section': False
+            'show_timer_section': False,
+            'view_mode': 'clock' # کاندیداهای وضعیت: 'clock' یا 'calendar'
         }
         if os.path.exists(CONFIG_FILE):
             try:
@@ -282,12 +382,12 @@ class ClockWidget(QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         
-        # بارگذاری آیکون از منابع داخلی
         self.setWindowIcon(QIcon(resource_path("icon.ico")))
         
         self.main_layout = QVBoxLayout()
         self.setLayout(self.main_layout)
         
+        # کانتینر اصلی ساعت و تایمر
         self.container = QWidget(self)
         self.container_layout = QVBoxLayout(self.container)
         self.main_layout.addWidget(self.container)
@@ -299,6 +399,10 @@ class ClockWidget(QWidget):
         self.container_layout.addLayout(self.clocks_layout)
         
         self.init_timer_ui()
+        
+        # کانتینر مستقل تقویم
+        self.init_calendar_ui()
+        
         self.apply_config()
         
         self.clock_timer = QTimer(self)
@@ -353,6 +457,58 @@ class ClockWidget(QWidget):
         
         self.container_layout.addWidget(self.timer_widget)
 
+    def init_calendar_ui(self):
+        self.calendar_container = QWidget(self)
+        self.calendar_container_layout = QVBoxLayout(self.calendar_container)
+        self.main_layout.addWidget(self.calendar_container)
+        
+        # نوار بالای تقویم
+        top_bar = QHBoxLayout()
+        
+        # دکمه بستن تقویم (ضربدر) جهت بازگشت سریع به ساعت
+        self.btn_back = QPushButton("×")
+        self.btn_back.setFixedSize(22, 22)
+        self.btn_back.setStyleSheet("color: #FF5555; font-weight: bold; background: transparent; border: none; font-size: 15px;")
+        self.btn_back.clicked.connect(self.switch_to_clock_view)
+        top_bar.addWidget(self.btn_back)
+        
+        # دکمه بازگشت به ماه جاری - فقط زمانی نمایش داده می‌شود که کاربر
+        # به ماه دیگری غیر از ماه فعلی رفته باشد، تا در تقویم گم نشود
+        self.btn_today = QPushButton("↺")
+        self.btn_today.setFixedSize(20, 20)
+        self.btn_today.setStyleSheet("color: #00FFCC; font-weight: bold; background: transparent; border: none; font-size: 13px;")
+        self.btn_today.clicked.connect(self.goto_current_month)
+        self.btn_today.setVisible(False)
+        top_bar.addWidget(self.btn_today)
+        
+        top_bar.addStretch()
+        
+        # کنترلرهای ماه
+        self.btn_prev_month = QPushButton(">")
+        self.btn_prev_month.setFixedSize(22, 22)
+        self.btn_prev_month.setStyleSheet("color: #00FFCC; background: rgba(255,255,255,15); border-radius: 4px; border: none; font-weight: bold;")
+        self.btn_prev_month.clicked.connect(self.next_month)
+        top_bar.addWidget(self.btn_prev_month)
+        
+        self.lbl_cal_title = QLabel()
+        self.lbl_cal_title.setStyleSheet("color: #FFFFFF; font-weight: bold; background: transparent; border: none;")
+        self.lbl_cal_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top_bar.addWidget(self.lbl_cal_title)
+        
+        self.btn_next_month = QPushButton("<")
+        self.btn_next_month.setFixedSize(22, 22)
+        self.btn_next_month.setStyleSheet("color: #00FFCC; background: rgba(255,255,255,15); border-radius: 4px; border: none; font-weight: bold;")
+        self.btn_next_month.clicked.connect(self.prev_month)
+        top_bar.addWidget(self.btn_next_month)
+        
+        top_bar.addStretch()
+        self.calendar_container_layout.addLayout(top_bar)
+        
+        # گرید روزهای هفته و اعداد ماه
+        self.cal_grid_layout = QGridLayout()
+        self.cal_grid_layout.setSpacing(4)
+        self.calendar_container_layout.addLayout(self.cal_grid_layout)
+
     def apply_config(self):
         self.save_config_to_file()
         is_fa = self.config['lang'] == 'fa'
@@ -368,15 +524,26 @@ class ClockWidget(QWidget):
         
         self.setWindowOpacity(self.config['opacity'])
         
-        self.container.setStyleSheet("""
+        qss_style = """
             QWidget {
                 background-color: rgba(25, 25, 25, 225);
                 border-radius: 12px;
                 border: 1px solid rgba(255, 255, 255, 20);
             }
             QLabel { border: none; background: transparent; }
-        """)
+        """
+        self.container.setStyleSheet(qss_style)
+        self.calendar_container.setStyleSheet(qss_style)
         
+        # مدیریت وضعیت نمایش اکتیو (ساعت یا تقویم)
+        if self.config.get('view_mode', 'clock') == 'calendar':
+            self.container.hide()
+            self.calendar_container.show()
+            self.render_calendar()
+        else:
+            self.calendar_container.hide()
+            self.container.show()
+
         if self.config.get('show_title', True):
             self.lbl_main_title.setText(t['title_text'])
             self.lbl_main_title.setFont(QFont("Vazirmatn" if is_fa else "Segoe UI", self.config['font_size'] + 3, QFont.Weight.Bold))
@@ -437,7 +604,7 @@ class ClockWidget(QWidget):
             lbl_time.setFont(self.ui_font)
             lbl_time.setStyleSheet("color: #00FFCC; font-weight: bold;")
             lbl_time.setAlignment(Qt.AlignmentFlag.AlignCenter if is_only_time else (Qt.AlignmentFlag.AlignLeft if is_fa else Qt.AlignmentFlag.AlignRight))
-            
+             
             time_row_layout.addWidget(lbl_city)
             if not is_only_time:
                 time_row_layout.addStretch()
@@ -528,6 +695,204 @@ class ClockWidget(QWidget):
                 
             labels['date_lbl'].setText(date_text)
 
+    # --- متدها و منطق رندر تقویم مینیمال ---
+    def render_calendar(self):
+        # پاک کردن گرید قبلی تقویم
+        while self.cal_grid_layout.count():
+            item = self.cal_grid_layout.takeAt(0)
+            w = item.widget()
+            if w: w.deleteLater()
+            
+        lang = self.config['lang']
+        is_fa = lang == 'fa'
+        t = TRANSLATIONS[lang]
+        cal_type = self.config.get('calendar_type', 'jalali')
+        
+        # مقداردهی اولیه به ماه و سال جاری در صورت خالی بودن
+        today_g = datetime.now()
+        today_j = jdatetime.date.fromgregorian(date=today_g.date())
+        
+        if self.current_cal_year is None or self.current_cal_month is None:
+            if cal_type == 'jalali':
+                self.current_cal_year = today_j.year
+                self.current_cal_month = today_j.month
+            else:
+                self.current_cal_year = today_g.year
+                self.current_cal_month = today_g.month
+
+        # نمایش دکمه «بازگشت به ماه جاری» فقط وقتی کاربر از ماه واقعی فاصله گرفته باشد
+        if cal_type == 'jalali':
+            is_current_month = (self.current_cal_year == today_j.year and
+                                 self.current_cal_month == today_j.month)
+        else:
+            is_current_month = (self.current_cal_year == today_g.year and
+                                 self.current_cal_month == today_g.month)
+        self.btn_today.setVisible(not is_current_month)
+
+        # چیدمان بر اساس زبان راست به چپ یا چپ به راست
+        # توجه: QGridLayout به‌صورت خودکار بر اساس layoutDirection ویجت، ستون‌ها را میرور می‌کند
+        # و برخلاف QVBoxLayout/QHBoxLayout متد setDirection ندارد.
+        if is_fa:
+            self.calendar_container.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        else:
+            self.calendar_container.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+
+        # تنظیم فونت‌ها
+        font_name = "Vazirmatn" if is_fa else "Segoe UI"
+        title_font = QFont(font_name, self.config['font_size'] - 3, QFont.Weight.DemiBold)
+        cell_font = QFont(font_name, self.config['font_size'] - 2)
+        
+        # نمایش سربرگ ماه و سال (نام ماه + سال کامل، مثل «دی ۱۴۰۵» یا «Jun 2026»)
+        if cal_type == 'jalali':
+            m_name = TRANSLATIONS['fa']['months_fa'][self.current_cal_month - 1]
+            title_str = f"{m_name} {self.current_cal_year}"
+            if is_fa: title_str = en_to_fa_num(title_str)
+        else:
+            m_name = MONTHS_EN_ABBR[self.current_cal_month - 1]
+            title_str = f"{m_name} {self.current_cal_year}"
+        self.lbl_cal_title.setText(title_str)
+        self.lbl_cal_title.setFont(title_font)
+        
+        # اضافه کردن روزهای هفته به سطر اول گرید
+        week_days = t['week_days_fa'] if cal_type == 'jalali' else t['week_days_en']
+        # ستون تعطیل هفتگی: جمعه (ستون آخر) در شمسی، یکشنبه (ستون اول) در میلادی
+        weekend_col = 6 if cal_type == 'jalali' else 0
+        for col, day_name in enumerate(week_days):
+            lbl = QLabel(day_name)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setFont(cell_font)
+            # رنگ قرمز ملایم برای ستون تعطیل هفتگی
+            if col == weekend_col:
+                lbl.setStyleSheet("color: #FF5555; font-weight: bold; padding: 1px;")
+            else:
+                lbl.setStyleSheet("color: #888888; padding: 1px;")
+            self.cal_grid_layout.addWidget(lbl, 0, col)
+
+        # محاسبه روزها
+        days_list = []
+        start_col = 0
+        
+        if cal_type == 'jalali':
+            first_day = jdatetime.date(self.current_cal_year, self.current_cal_month, 1)
+            # در jdatetime متد weekday مقدار 0 برای شنبه و 6 برای جمعه برمی‌گرداند
+            start_col = first_day.weekday() 
+            
+            # پیدا کردن تعداد روزهای ماه شمسی
+            if self.current_cal_month <= 6:
+                total_days = 31
+            elif self.current_cal_month <= 11:
+                total_days = 30
+            else:
+                # بررسی سال کبیسه
+                try:
+                    jdatetime.date(self.current_cal_year, 12, 30)
+                    total_days = 30
+                except ValueError:
+                    total_days = 29
+        else:
+            # کست به کتابخانه استاندارد تقویم میلادی
+            # weekday_of_first_day: 0=Monday, 6=Sunday
+            weekday_first, total_days = calendar.monthrange(self.current_cal_year, self.current_cal_month)
+            # تبدیل به ساختاری که یکشنبه ستون اول باشد (0=Sunday, ..., 6=Saturday)
+            start_col = (weekday_first + 1) % 7
+
+        # پر کردن خانه‌های خالی قبل از شروع ماه
+        for _ in range(start_col):
+            days_list.append(None)
+            
+        for d in range(1, total_days + 1):
+            days_list.append(d)
+
+        # رندر کردن گرید روزها
+        row = 1
+        col = 0
+        for day_val in days_list:
+            if day_val is not None:
+                display_num = en_to_fa_num(day_val) if (is_fa and cal_type == 'jalali') else str(day_val)
+                lbl_day = QLabel(display_num)
+                lbl_day.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                lbl_day.setFont(cell_font)
+                
+                # بررسی اینکه آیا این خانه نشان‌دهنده امروز است؟
+                is_today = False
+                if cal_type == 'jalali':
+                    if (self.current_cal_year == today_j.year and 
+                        self.current_cal_month == today_j.month and 
+                        day_val == today_j.day):
+                        is_today = True
+                else:
+                    if (self.current_cal_year == today_g.year and 
+                        self.current_cal_month == today_g.month and 
+                        day_val == today_g.day):
+                        is_today = True
+
+                # بررسی تعطیل رسمی بودن روز (جمعه‌ها یا تعطیلات ثابت شمسی)
+                holiday_name = None
+                if cal_type == 'jalali':
+                    holiday_name = HOLIDAYS_JALALI.get((self.current_cal_month, day_val))
+                is_holiday = (col == weekend_col) or (holiday_name is not None)
+
+                # استایل دهی بر اساس نوع روز (امروز / تعطیل / عادی)
+                if is_today:
+                    # امروز: پررنگ‌تر با بک‌گراند دایره‌ای ملایم فیروزه‌ای
+                    lbl_day.setStyleSheet("""
+                        color: #111111; 
+                        background-color: #00FFCC; 
+                        font-weight: bold; 
+                        border-radius: 4px;
+                        padding: 1px;
+                    """)
+                elif is_holiday:
+                    # روزهای تعطیل رسمی (جمعه یا مناسبت‌های ثابت شمسی)
+                    lbl_day.setStyleSheet("color: #FF5555; font-weight: bold; padding: 1px;")
+                    if holiday_name:
+                        lbl_day.setToolTip(holiday_name)
+                else:
+                    # روزهای عادی
+                    lbl_day.setStyleSheet("color: #E0E0E0; padding: 1px;")
+                    
+                self.cal_grid_layout.addWidget(lbl_day, row, col)
+            else:
+                # خانه خالی
+                self.cal_grid_layout.addWidget(QLabel(""), row, col)
+                
+            col += 1
+            if col > 6:
+                col = 0
+                row += 1
+
+        QTimer.singleShot(30, self.adjustSize)
+
+    def goto_current_month(self):
+        self.current_cal_year = None
+        self.current_cal_month = None
+        self.render_calendar()
+
+    def prev_month(self):
+        self.current_cal_month -= 1
+        if self.current_cal_month < 1:
+            self.current_cal_month = 12
+            self.current_cal_year -= 1
+        self.render_calendar()
+
+    def next_month(self):
+        self.current_cal_month += 1
+        if self.current_cal_month > 12:
+            self.current_cal_month = 1
+            self.current_cal_year += 1
+        self.render_calendar()
+
+    def switch_to_calendar_view(self):
+        self.current_cal_year = None
+        self.current_cal_month = None
+        self.config['view_mode'] = 'calendar'
+        self.apply_config()
+
+    def switch_to_clock_view(self):
+        self.config['view_mode'] = 'clock'
+        self.apply_config()
+
+    # --- بخش مدیریت کرونومتر ---
     def toggle_stopwatch(self):
         if self.stopwatch_running:
             self.stopwatch_timer.stop()
@@ -569,6 +934,7 @@ class ClockWidget(QWidget):
         self.config['show_timer_section'] = False
         self.apply_config()
 
+    # --- ایونت‌های ماوس جهت جابجایی بدون حاشیه ویجت ---
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.old_pos = event.globalPosition().toPoint()
@@ -582,6 +948,7 @@ class ClockWidget(QWidget):
     def mouseReleaseEvent(self, event):
         self.old_pos = QPoint()
 
+    # --- منوی کلیک راست ---
     def contextMenuEvent(self, event):
         context_menu = QMenu(self)
         t = TRANSLATIONS[self.config['lang']]
@@ -592,6 +959,14 @@ class ClockWidget(QWidget):
         action_timer.setCheckable(True)
         action_timer.setChecked(self.config.get('show_timer_section', False))
         action_timer.triggered.connect(self.toggle_timer_section_visibility)
+
+        is_calendar_view = self.config.get('view_mode', 'clock') == 'calendar'
+        if is_calendar_view:
+            action_calendar = QAction(t['back_to_clock'], self)
+            action_calendar.triggered.connect(self.switch_to_clock_view)
+        else:
+            action_calendar = QAction(t['calendar'], self)
+            action_calendar.triggered.connect(self.switch_to_calendar_view)
         
         action_settings = QAction(t['settings'], self)
         action_minimize = QAction(t['minimize'], self)
@@ -601,7 +976,9 @@ class ClockWidget(QWidget):
         action_minimize.triggered.connect(self.showMinimized)
         action_close.triggered.connect(QApplication.instance().quit)
         
-        context_menu.addAction(action_timer)
+        if not is_calendar_view:
+            context_menu.addAction(action_timer)
+        context_menu.addAction(action_calendar)
         context_menu.addSeparator()
         context_menu.addAction(action_settings)
         context_menu.addAction(action_minimize)
