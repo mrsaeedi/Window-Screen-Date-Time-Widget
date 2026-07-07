@@ -80,15 +80,24 @@ python time_screen_widget.pyw
 
 ## 📁 ساختار پروژه
 ```Plaintext
-Window-Screen-Date-Time-Widget/
-├── assets/
-│   ├── icon.ico                # آیکون برنامه
-│   └── screenshot.png          # پیش‌نمایش برای README
-├── time_screen_widget.pyw      # کد اصلی برنامه (بدون کنسول)
-├── .gitignore                  # فایل‌های نادیده گرفته شده
-├── requirements.txt            # کتابخانه‌های مورد نیاز
-├── LICENSE                     # مجوز پروژه
-└── README.md                   # همین فایل
+SCREEN_TIME
+├── main.py                        # نقطه ورود برنامه
+├── config/
+│   ├── constants.py                # CITIES_DB, HOLIDAYS_JALALI, MONTHS_EN_ABBR
+│   ├── translations.py             # دیکشنری TRANSLATIONS (fa/en)
+│   └── settings_store.py           # مسیر فایل کانفیگ + load/save
+├── core/
+│   ├── number_utils.py             # تبدیل اعداد انگلیسی به فارسی
+│   ├── startup_manager.py          # ثبت در Startup ویندوز
+│   ├── calendar_engine.py          # محاسبات خالص گرید تقویم شمسی/میلادی
+│   └── datetime_formatter.py       # فرمت‌دهی متن ساعت و تاریخ هر شهر
+└── ui/
+    ├── settings_dialog.py          # دیالوگ تنظیمات
+    ├── clock_widget.py             # پنجره اصلی (orchestrator)
+    └── components/
+        ├── clock_row.py            # یک ردیف ساعت/تاریخ برای هر شهر
+        ├── timer_panel.py          # پنل کرونومتر مستقل
+        └── calendar_panel.py       # پنل تقویم مستقل
 ```
 ## 🎨 نکات توسعه
  استایل‌دهی (UI): ظاهر برنامه با `setStyleSheet` و فناوری `QSS` طراحی شده. برای تغییر رنگ یا پدینگ، بخش‌های مربوطه را در `time_screen_widget.pyw` ویرایش کنید.
