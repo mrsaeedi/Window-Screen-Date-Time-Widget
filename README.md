@@ -1,6 +1,8 @@
 <p align="center">
   <img src="https://img.shields.io/github/v/release/mrsaeedi/Window-Screen-Date-Time-Widget?style=flat-square&color=blue" alt="release">
-  <img src="https://img.shields.io/github/downloads/mrsaeedi/Window-Screen-Date-Time-Widget/total?style=flat-square&color=green" alt="downloads">
+<a href="https://github.com/mrsaeedi/Window-Screen-Date-Time-Widget/releases/latest/download/ScreenTimeWidget_Setup.exe">
+    <img src="https://img.shields.io/badge/⬇_Download-Windows_Installer-2ea44f?style=flat-square&logo=windows" alt="download">
+  </a>
   <img src="https://img.shields.io/github/license/mrsaeedi/Window-Screen-Date-Time-Widget?style=flat-square&color=orange" alt="license">
   <img src="https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python" alt="python">
   <img src="https://img.shields.io/badge/PyQt-6-brightgreen?style=flat-square&logo=qt" alt="PyQt6">
@@ -11,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Window Screen Date Time Widget Preview" width="600">
+  <img src="assets/screenshot2.png" alt="Window Screen Date Time Widget Preview" width="600">
 </p>
 
 ---
@@ -119,7 +121,7 @@ screen_time/
 ### ✨ ویژگی‌های کلیدی
 
 - 🕰️ **نمایش همزمان چند ساعت** از شهرهای دلخواه با قابلیت افزودن یا حذف.
-- 📅 **نمایش کامل تقویم ماهانه** — ناوبری بین ماه‌ها، بازگشت سریع به امروز، و مشخص‌کردن تعطیلات رسمی شمسی. *(جدید در نسخه ۱.۱.۰)*
+- 📅 **نمایش کامل تقویم ماهانه** — ناوبری بین ماه‌ها، بازگشت سریع  ) تعطیلات قمری لحاظ نشده است) به امروز، و مشخص‌کردن تعطیلات رسمی شمسی. *(جدید در نسخه ۱.۱.۰)*
 - 🗓️ **پشتیبانی از تقویم شمسی و میلادی** — قابل تغییر از تنظیمات.
 - 🪟 **حالت ویجت بدون حاشیه** — قابل جابه‌جایی، تغییر شفافیت و همیشه روی دسکتاپ.
 - ⏱️ **زمان‌سنج داخلی** — با امکان باز و بسته کردن جداگانه از ساعت.
