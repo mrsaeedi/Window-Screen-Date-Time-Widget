@@ -1,4 +1,3 @@
-# Main clock widget orchestrator
 """
 ui/clock_widget.py
 
@@ -9,6 +8,7 @@ The main frameless, always-on-desktop widget. Responsibilities:
 - react to user interaction: dragging the window, the right-click menu, and
   opening the settings dialog
 - tick every second to refresh the displayed time/date
+- apply the active visual theme ("simple" or "glass") to its containers
 
 All calendar-grid math and stopwatch bookkeeping live in `CalendarPanel` /
 `TimerPanel` -- this class only wires them together and applies the current
@@ -31,6 +31,7 @@ from ui.components.clock_row import ClockRowWidget
 from ui.components.timer_panel import TimerPanel
 from ui.components.calendar_panel import CalendarPanel
 from ui.settings_dialog import SettingsDialog
+from ui.styles import build_container_qss, apply_drop_shadow, ensure_styled_background
 
 
 class ClockWidget(QWidget):
@@ -54,6 +55,8 @@ class ClockWidget(QWidget):
 
         # Clock + timer container
         self.container = QWidget(self)
+        self.container.setObjectName("GlassContainer")
+        ensure_styled_background(self.container)
         self.container_layout = QVBoxLayout(self.container)
         self.main_layout.addWidget(self.container)
 
@@ -69,6 +72,8 @@ class ClockWidget(QWidget):
 
         # Independent calendar container
         self.calendar_container = QWidget(self)
+        self.calendar_container.setObjectName("GlassContainer")
+        ensure_styled_background(self.calendar_container)
         calendar_layout = QVBoxLayout(self.calendar_container)
         calendar_layout.setContentsMargins(0, 0, 0, 0)
         self.calendar_panel = CalendarPanel()
@@ -102,16 +107,12 @@ class ClockWidget(QWidget):
 
         self.setWindowOpacity(self.config['opacity'])
 
-        qss_style = """
-            QWidget {
-                background-color: rgba(25, 25, 25, 225);
-                border-radius: 12px;
-                border: 1px solid rgba(255, 255, 255, 20);
-            }
-            QLabel { border: none; background: transparent; }
-        """
+        theme = self.config.get('theme', 'simple')
+        qss_style = build_container_qss(theme)
         self.container.setStyleSheet(qss_style)
         self.calendar_container.setStyleSheet(qss_style)
+        apply_drop_shadow(self.container, theme)
+        apply_drop_shadow(self.calendar_container, theme)
 
         if self.config.get('view_mode', 'clock') == 'calendar':
             self.container.hide()
@@ -177,6 +178,7 @@ class ClockWidget(QWidget):
 
         self.timer_panel.apply_language(self.config['lang'])
         self.timer_panel.apply_fonts(title_font, display_font)
+        self.timer_panel.apply_theme(self.config.get('theme', 'simple'))
         self.timer_panel.setVisible(self.config.get('show_timer_section', False))
 
     def _apply_margins(self) -> None:
@@ -187,12 +189,16 @@ class ClockWidget(QWidget):
             and not self.config.get('show_timer_section', False)
             and not self.config.get('show_title', True)
         )
+        is_glass = self.config.get('theme', 'simple') == 'glass'
+        shadow_room = 12 if is_glass else 0
 
         if minimal:
-            self.main_layout.setContentsMargins(8, 8, 8, 8)
+            m = 8 + shadow_room
+            self.main_layout.setContentsMargins(m, m, m, m)
             self.container_layout.setContentsMargins(10, 10, 10, 10)
         else:
-            self.main_layout.setContentsMargins(14, 14, 14, 14)
+            m = 14 + shadow_room
+            self.main_layout.setContentsMargins(m, m, m, m)
             self.container_layout.setContentsMargins(16, 16, 16, 16)
 
     def _force_shrink(self) -> None:

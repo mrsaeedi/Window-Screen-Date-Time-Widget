@@ -10,6 +10,9 @@ trivial to add a new language later without touching any UI code.
 
 TRANSLATIONS = {
     'fa': {
+        'theme': 'ظاهر ویجت',
+        'theme_simple': 'ساده',
+        'theme_glass': 'شیشه‌ای',
         'title_text': 'زمان',
         'settings': 'تنظیمات ویجت', 'close': 'خروج', 'minimize': 'کوچک کردن',
         'always_on_top': 'همیشه رو باشد (Always on Top)', 'show_seconds': 'نمایش ثانیه',
@@ -30,6 +33,9 @@ TRANSLATIONS = {
         'week_days_en': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
     },
     'en': {
+        'theme': 'Widget Style',
+        'theme_simple': 'Simple',
+        'theme_glass': 'Glass',
         'title_text': 'Time',
         'settings': 'Widget Settings', 'close': 'Close', 'minimize': 'Minimize',
         'always_on_top': 'Always on Top', 'show_seconds': 'Show Seconds',

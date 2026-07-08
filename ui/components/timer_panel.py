@@ -7,11 +7,11 @@ and the small header/display/buttons UI. `ClockWidget` only needs to
 show/hide this panel and call `apply_language()` / `apply_fonts()` when
 settings change -- all stopwatch state lives here.
 """
-
+from ui.styles import build_panel_qss, ensure_styled_background
+from ui.styles import build_panel_qss
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
-
 from config.translations import TRANSLATIONS
 from core.number_utils import en_to_fa_num
 
@@ -93,6 +93,10 @@ class TimerPanel(QWidget):
     def apply_fonts(self, title_font: QFont, display_font: QFont) -> None:
         self.lbl_title.setFont(title_font)
         self.lbl_display.setFont(display_font)
+
+    def apply_theme(self, theme: str) -> None:
+        ensure_styled_background(self)
+        self.setStyleSheet(build_panel_qss(theme))
 
     def toggle(self) -> None:
         self.pause() if self._running else self.start()

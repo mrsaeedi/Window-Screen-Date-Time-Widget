@@ -17,6 +17,7 @@ import sys
 import json
 
 DEFAULT_CONFIG = {
+    'theme': 'simple',   # 'simple' or 'glass'
     'always_on_top': True,
     'run_at_startup': True,
     'show_seconds': True,

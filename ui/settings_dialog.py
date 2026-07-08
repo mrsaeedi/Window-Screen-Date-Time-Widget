@@ -1,10 +1,10 @@
-# Settings dialog UI
 """
 ui/settings_dialog.py
 
 Modal dialog for editing all user-configurable options: title/seconds/date
 visibility, always-on-top, run-at-startup, 12h/24h format, calendar type,
-language, font size, opacity, and the list of visible cities.
+widget theme (simple/glass), language, font size, opacity, and the list of
+visible cities.
 
 On "Save" it writes the new values into `parent.config` and calls
 `parent.apply_config()`, which re-renders the whole widget and persists the
@@ -88,6 +88,20 @@ class SettingsDialog(QDialog):
         cal_group.setLayout(cal_layout)
         layout.addWidget(cal_group)
 
+        theme_group = QGroupBox(t['theme'])
+        theme_layout = QHBoxLayout()
+        self.btn_group_theme = QButtonGroup(self)
+        self.rad_theme_simple = QRadioButton(t['theme_simple'])
+        self.rad_theme_glass = QRadioButton(t['theme_glass'])
+        self.btn_group_theme.addButton(self.rad_theme_simple)
+        self.btn_group_theme.addButton(self.rad_theme_glass)
+        is_glass = self.parent.config.get('theme', 'simple') == 'glass'
+        (self.rad_theme_glass if is_glass else self.rad_theme_simple).setChecked(True)
+        theme_layout.addWidget(self.rad_theme_simple)
+        theme_layout.addWidget(self.rad_theme_glass)
+        theme_group.setLayout(theme_layout)
+        layout.addWidget(theme_group)
+
         lang_layout = QHBoxLayout()
         lang_layout.addWidget(QLabel(t['lang']))
         self.cmb_lang = QComboBox()
@@ -158,13 +172,12 @@ class SettingsDialog(QDialog):
         config['show_date'] = self.chk_date.isChecked()
         config['only_time'] = self.chk_only_time.isChecked()
         config['time_format'] = 12 if self.rad_12.isChecked() else 24
+        config['theme'] = 'glass' if self.rad_theme_glass.isChecked() else 'simple'
 
         old_calendar_type = config.get('calendar_type', 'jalali')
         new_calendar_type = 'jalali' if self.rad_shamsi.isChecked() else 'gregorian'
         config['calendar_type'] = new_calendar_type
         if new_calendar_type != old_calendar_type:
-            # The previously browsed year/month belonged to the old calendar
-            # system, so it no longer makes sense -- reset navigation.
             self.parent.reset_calendar_navigation()
 
         config['lang'] = self.cmb_lang.currentData()
